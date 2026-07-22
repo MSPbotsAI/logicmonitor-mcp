@@ -1,0 +1,31 @@
+[project]
+name = "logicmonitor-mcp"
+version = "0.1.0"
+description = "LogicMonitor MCP server — exposes the LogicMonitor REST API (v3) as MCP tools"
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+
+dependencies = [
+    "mcp[cli]>=1.9.0",
+    "httpx>=0.27.0",
+    "pydantic-settings>=2.3.0",
+    "uvicorn>=0.30.0",
+    "starlette>=0.41.0",
+]
+
+[project.scripts]
+logicmonitor-mcp = "logicmonitor_mcp.__main__:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/logicmonitor_mcp"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
