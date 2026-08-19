@@ -86,6 +86,29 @@ def create_mcp_server(settings: Settings) -> FastMCP:
     # correctly behind a reverse proxy or docker network.
     mcp = FastMCP(
         name="logicmonitor-mcp",
+        instructions=(
+            "LogicMonitor is a SaaS infrastructure monitoring platform. Devices "
+            "(servers, network gear, cloud resources) are organized into device "
+            "groups and monitored via DataSources, which collect metrics and raise "
+            "Alerts when thresholds are breached; escalation rules control who "
+            "gets notified. Scheduled Down Time (SDT) suppresses alerts during "
+            "planned maintenance. Admin covers portal users/roles; Reports "
+            "summarizes configured reports for stakeholders.\n\n"
+            "Tool domains: devices (list devices/device groups, device "
+            "properties), datasources (DataSources applied to a device, their "
+            "instances, collected data points, per-instance alert-threshold "
+            "overrides), alerts (list/inspect alerts and escalation rules), sdt "
+            "(scheduled maintenance windows), admin (users, roles), reports "
+            "(reports, report groups).\n\n"
+            "Typical flow: logicmonitor_get_devices to find a device_id, then "
+            "logicmonitor_get_device_datasources(device_id) to see what's "
+            "monitored on it, then logicmonitor_get_device_datasource_data or "
+            "logicmonitor_get_device_datasource_instance_alertsettings to drill "
+            "into one DataSource instance. Before treating a missing alert as a "
+            "false negative, check logicmonitor_get_sdts — it may be suppressed "
+            "by an active maintenance window. All 15 tools are read-only "
+            "queries; there are no write/delete tools in this service."
+        ),
         transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
     )
 

@@ -29,7 +29,7 @@ python -m logicmonitor_mcp
 
 ```bash
 curl http://localhost:8080/health
-# {"status": "ok", "service": "logicmonitor-mcp", "transport": "http"}
+# {"status": "ok"}
 ```
 
 No credentials are required for the health endpoint.
@@ -67,22 +67,24 @@ Connect your MCP client with:
 
 ## Tool List
 
-**15 tools** — matching the 15 LogicMonitor API endpoints already registered under this integration in MSPbots (`sys_integration` subject_code `LOGICMONITOR`), so tool coverage is consistent with MSPbots' existing scope.
+**15 tools** — matching the 15 LogicMonitor API endpoints already registered under this integration in MSPbots (`sys_integration` subject_code `LOGICMONITOR`), so tool coverage is consistent with MSPbots' existing scope. All tools are read-only (`readOnlyHint=True`); there are no write/delete tools in this service.
+
+Pagination: `size` defaults to **50** and is server-side clamped to a hard cap of **1000** — LogicMonitor's own documented/enforced maximum for this parameter (values above 1000 are silently clamped by LogicMonitor itself; requesting more never errors, it just returns at most 1000). Independent of that, any single tool response is capped at 20,000 characters — if a page of results would exceed it, the response is truncated with `truncated`/`original_count` fields rather than returned in full.
 
 ### Devices (3)
 
 | Tool | 功能 | 参数 |
 |---|---|---|
-| `logicmonitor_get_devices` | 列出监控设备 | `size=100`, `offset=0`, `sort?`, `filter?`, `fields?` |
-| `logicmonitor_get_device_groups` | 列出设备分组 | `size=100`, `offset=0`, `sort?`, `filter?`, `fields?` |
-| `logicmonitor_get_device_properties` | 查设备的自定义/系统属性 | `device_id`, `size=100`, `offset=0`, `filter?` |
+| `logicmonitor_get_devices` | 列出监控设备 | `size=50` (max 1000), `offset=0`, `sort?`, `filter?`, `fields?` |
+| `logicmonitor_get_device_groups` | 列出设备分组 | `size=50` (max 1000), `offset=0`, `sort?`, `filter?`, `fields?` |
+| `logicmonitor_get_device_properties` | 查设备的自定义/系统属性 | `device_id`, `size=50` (max 1000), `offset=0`, `filter?` |
 
 ### Device DataSources (4)
 
 | Tool | 功能 | 参数 |
 |---|---|---|
-| `logicmonitor_get_device_datasources` | 列出设备已应用的 DataSource | `device_id`, `size=100`, `offset=0`, `filter?`, `fields?` |
-| `logicmonitor_get_device_datasource_instances` | 列出某 DataSource 在设备上的实例 | `device_id`, `source_id`, `size=100`, `offset=0`, `filter?` |
+| `logicmonitor_get_device_datasources` | 列出设备已应用的 DataSource | `device_id`, `size=50` (max 1000), `offset=0`, `filter?`, `fields?` |
+| `logicmonitor_get_device_datasource_instances` | 列出某 DataSource 在设备上的实例 | `device_id`, `source_id`, `size=50` (max 1000), `offset=0`, `filter?` |
 | `logicmonitor_get_device_datasource_data` | 获取 DataSource 采集的数据点 | `device_id`, `source_id`, `start?`, `end?` |
 | `logicmonitor_get_device_datasource_instance_alertsettings` | 查 DataSource 实例的告警阈值/设置覆盖 | `device_id`, `source_id`, `instance_id` |
 
@@ -90,29 +92,46 @@ Connect your MCP client with:
 
 | Tool | 功能 | 参数 |
 |---|---|---|
-| `logicmonitor_get_alerts` | 列出活跃/历史告警 | `size=50`, `offset=0`, `sort?`, `filter?`, `fields?` |
+| `logicmonitor_get_alerts` | 列出活跃/历史告警 | `size=50` (max 1000), `offset=0`, `sort?`, `filter?`, `fields?` |
 | `logicmonitor_get_alert_detail` | 查单条告警详情 | `alert_id` |
-| `logicmonitor_get_alert_rules` | 列出告警升级规则 | `size=100`, `offset=0`, `filter?` |
+| `logicmonitor_get_alert_rules` | 列出告警升级规则 | `size=50` (max 1000), `offset=0`, `filter?` |
 
 ### Admin (2)
 
 | Tool | 功能 | 参数 |
 |---|---|---|
-| `logicmonitor_get_users` | 列出门户用户(admin)账号 | `size=100`, `offset=0`, `filter?`, `fields?` |
-| `logicmonitor_get_roles` | 列出角色(权限集) | `size=100`, `offset=0`, `filter?` |
+| `logicmonitor_get_users` | 列出门户用户(admin)账号 | `size=50` (max 1000), `offset=0`, `filter?`, `fields?` |
+| `logicmonitor_get_roles` | 列出角色(权限集) | `size=50` (max 1000), `offset=0`, `filter?` |
 
 ### Reports (2)
 
 | Tool | 功能 | 参数 |
 |---|---|---|
-| `logicmonitor_get_reports` | 列出报表 | `size=100`, `offset=0`, `filter?`, `fields?` |
-| `logicmonitor_get_report_groups` | 列出报表分组 | `size=100`, `offset=0`, `filter?` |
+| `logicmonitor_get_reports` | 列出报表 | `size=50` (max 1000), `offset=0`, `filter?`, `fields?` |
+| `logicmonitor_get_report_groups` | 列出报表分组 | `size=50` (max 1000), `offset=0`, `filter?` |
 
 ### SDT (1)
 
 | Tool | 功能 | 参数 |
 |---|---|---|
-| `logicmonitor_get_sdts` | 列出计划停机(Scheduled Down Time)条目 | `size=100`, `offset=0`, `filter?` |
+| `logicmonitor_get_sdts` | 列出计划停机(Scheduled Down Time)条目 | `size=50` (max 1000), `offset=0`, `filter?` |
+
+## Error Handling
+
+Tool errors are returned as a JSON string (not a protocol-level exception), so an Agent can branch on it programmatically:
+
+```json
+{"error": {"code": "upstream_error", "message": "...", "retryable": true}}
+```
+
+`code` is one of a fixed vocabulary: `not_configured`, `unauthorized`, `not_found`, `invalid_argument`, `rate_limited`, `upstream_error`. `retryable` indicates whether the same call is safe to retry (true for `rate_limited`/`upstream_error`, false otherwise).
+
+## Network Robustness
+
+- Outbound timeouts: connect 5s / read 30s / write 10s / pool 5s.
+- Limited retry (up to 3 attempts) with capped exponential backoff on `429`/`5xx`, honoring `Retry-After` when present.
+- Each retry attempt recomputes the LMv1 signature from scratch (it embeds the current epoch), so a retried request is never sent with a stale/expired signature.
+- A single shared `httpx.AsyncClient` connection pool is reused for the process lifetime.
 
 ## 测试示例 (Test Example)
 
@@ -161,5 +180,5 @@ A parameterized call:
 
 ## Known Gaps / Not Yet Verified
 
-- Not yet tested against a live LogicMonitor portal — only protocol-level verification (health check, 401 on missing headers, `tools/list` returning all 15 tools) has been done so far.
+- Not yet tested against a live LogicMonitor portal — only protocol-level verification (health check, 401 on missing/partial headers, `tools/list` returning all 15 tools, unit-tested error-code mapping) has been done so far.
 - Tool coverage intentionally matches MSPbots' existing 15 registered LogicMonitor API entries rather than the full LogicMonitor REST API surface (which additionally covers write operations, dashboards, websites, collectors, and LogicModules) — expand on request if broader coverage is needed.

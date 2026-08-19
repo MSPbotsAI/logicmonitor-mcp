@@ -1,101 +1,105 @@
-import json
 from collections.abc import Callable
+from typing import Annotated
 
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
+from pydantic import Field
 
+from .._json import dump_json_capped
 from ..api_client import LogicMonitorClient, LogicMonitorError
-from ._common import NO_TOKEN
+from ._common import DEFAULT_PAGE_SIZE, NO_TOKEN, clamp_size
 
 
 def register(mcp: FastMCP, client_factory: Callable[[], LogicMonitorClient | None]) -> None:
 
-    @mcp.tool()
+    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
     async def logicmonitor_get_devices(
-        size: int = 100,
-        offset: int = 0,
-        sort: str | None = None,
-        filter: str | None = None,
-        fields: str | None = None,
+        size: Annotated[
+            int, Field(description="Page size (default 50, max 1000).")
+        ] = DEFAULT_PAGE_SIZE,
+        offset: Annotated[int, Field(description="Pagination offset (default 0).")] = 0,
+        sort: Annotated[
+            str | None, Field(description='Sort expression, e.g. "+id" or "-hostStatus".')
+        ] = None,
+        filter: Annotated[
+            str | None, Field(description='LogicMonitor filter expression, e.g. "displayName:host1".')
+        ] = None,
+        fields: Annotated[
+            str | None, Field(description="Comma-separated list of fields to return.")
+        ] = None,
     ) -> str:
-        """List monitored devices for the portal.
-
-        API: GET /device/devices
-
-        Args:
-            size: Page size (default 100).
-            offset: Pagination offset (default 0).
-            sort: Optional sort expression (e.g. "+id", "-hostStatus").
-            filter: Optional LogicMonitor filter expression (e.g. "displayName:host1").
-            fields: Optional comma-separated list of fields to return.
-        """
+        """List monitored devices for the portal."""
         client = client_factory()
         if client is None:
             return NO_TOKEN
         try:
             result = await client.get(
                 "/device/devices",
-                params={"size": size, "offset": offset, "sort": sort, "filter": filter, "fields": fields},
+                params={
+                    "size": clamp_size(size),
+                    "offset": offset,
+                    "sort": sort,
+                    "filter": filter,
+                    "fields": fields,
+                },
             )
-            return json.dumps(result, indent=2)
+            return dump_json_capped(result)
         except LogicMonitorError as e:
-            return f"Error: {e}"
+            return e.to_envelope()
 
-    @mcp.tool()
+    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
     async def logicmonitor_get_device_groups(
-        size: int = 100,
-        offset: int = 0,
-        sort: str | None = None,
-        filter: str | None = None,
-        fields: str | None = None,
+        size: Annotated[
+            int, Field(description="Page size (default 50, max 1000).")
+        ] = DEFAULT_PAGE_SIZE,
+        offset: Annotated[int, Field(description="Pagination offset (default 0).")] = 0,
+        sort: Annotated[str | None, Field(description="Sort expression.")] = None,
+        filter: Annotated[
+            str | None, Field(description="LogicMonitor filter expression.")
+        ] = None,
+        fields: Annotated[
+            str | None, Field(description="Comma-separated list of fields to return.")
+        ] = None,
     ) -> str:
-        """List device groups for the portal.
-
-        API: GET /device/groups
-
-        Args:
-            size: Page size (default 100).
-            offset: Pagination offset (default 0).
-            sort: Optional sort expression.
-            filter: Optional LogicMonitor filter expression.
-            fields: Optional comma-separated list of fields to return.
-        """
+        """List device groups for the portal."""
         client = client_factory()
         if client is None:
             return NO_TOKEN
         try:
             result = await client.get(
                 "/device/groups",
-                params={"size": size, "offset": offset, "sort": sort, "filter": filter, "fields": fields},
+                params={
+                    "size": clamp_size(size),
+                    "offset": offset,
+                    "sort": sort,
+                    "filter": filter,
+                    "fields": fields,
+                },
             )
-            return json.dumps(result, indent=2)
+            return dump_json_capped(result)
         except LogicMonitorError as e:
-            return f"Error: {e}"
+            return e.to_envelope()
 
-    @mcp.tool()
+    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
     async def logicmonitor_get_device_properties(
-        device_id: str,
-        size: int = 100,
-        offset: int = 0,
-        filter: str | None = None,
+        device_id: Annotated[str, Field(description="Device ID.")],
+        size: Annotated[
+            int, Field(description="Page size (default 50, max 1000).")
+        ] = DEFAULT_PAGE_SIZE,
+        offset: Annotated[int, Field(description="Pagination offset (default 0).")] = 0,
+        filter: Annotated[
+            str | None, Field(description="LogicMonitor filter expression.")
+        ] = None,
     ) -> str:
-        """List custom and system properties for a specific device.
-
-        API: GET /device/devices/{deviceId}/properties
-
-        Args:
-            device_id: Device ID.
-            size: Page size (default 100).
-            offset: Pagination offset (default 0).
-            filter: Optional LogicMonitor filter expression.
-        """
+        """List custom and system properties for a specific device."""
         client = client_factory()
         if client is None:
             return NO_TOKEN
         try:
             result = await client.get(
                 f"/device/devices/{device_id}/properties",
-                params={"size": size, "offset": offset, "filter": filter},
+                params={"size": clamp_size(size), "offset": offset, "filter": filter},
             )
-            return json.dumps(result, indent=2)
+            return dump_json_capped(result)
         except LogicMonitorError as e:
-            return f"Error: {e}"
+            return e.to_envelope()
