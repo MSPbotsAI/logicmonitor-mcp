@@ -16,13 +16,7 @@ EXPECTED_TOOLS = {
     "logicmonitor_get_device_groups": set(),
     "logicmonitor_get_device_properties": {"device_id"},
     "logicmonitor_get_device_datasources": {"device_id"},
-    "logicmonitor_get_device_datasource_instances": {"device_id", "source_id"},
     "logicmonitor_get_device_datasource_data": {"device_id", "source_id"},
-    "logicmonitor_get_device_datasource_instance_alertsettings": {
-        "device_id",
-        "source_id",
-        "instance_id",
-    },
     "logicmonitor_get_alerts": set(),
     "logicmonitor_get_alert_detail": {"alert_id"},
     "logicmonitor_get_alert_rules": set(),

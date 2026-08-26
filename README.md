@@ -67,7 +67,7 @@ Connect your MCP client with:
 
 ## Tool List
 
-**15 tools** — matching the 15 LogicMonitor API endpoints already registered under this integration in MSPbots (`sys_integration` subject_code `LOGICMONITOR`), so tool coverage is consistent with MSPbots' existing scope. All tools are read-only (`readOnlyHint=True`); there are no write/delete tools in this service.
+**13 tools.** Originally matched the 15 LogicMonitor API endpoints registered under this integration in MSPbots (`sys_integration` subject_code `LOGICMONITOR`); `get_device_datasource_instances` and `get_device_datasource_instance_alertsettings` were removed after intent-matching testing found their instance-ID drill-down (device → DataSource → instance → alertsettings) added confusion without a clear caller need — the remaining `get_device_datasource_data` still covers actual collected metrics. All tools are read-only (`readOnlyHint=True`); there are no write/delete tools in this service.
 
 Pagination: `size` defaults to **50** and is server-side clamped to a hard cap of **1000** — LogicMonitor's own documented/enforced maximum for this parameter (values above 1000 are silently clamped by LogicMonitor itself; requesting more never errors, it just returns at most 1000). Independent of that, any single tool response is capped at 20,000 characters — if a page of results would exceed it, the response is truncated with `truncated`/`original_count` fields rather than returned in full.
 
@@ -79,14 +79,12 @@ Pagination: `size` defaults to **50** and is server-side clamped to a hard cap o
 | `logicmonitor_get_device_groups` | 列出设备分组 | `size=50` (max 1000), `offset=0`, `sort?`, `filter?`, `fields?` |
 | `logicmonitor_get_device_properties` | 查设备的自定义/系统属性 | `device_id`, `size=50` (max 1000), `offset=0`, `filter?` |
 
-### Device DataSources (4)
+### Device DataSources (2)
 
 | Tool | 功能 | 参数 |
 |---|---|---|
 | `logicmonitor_get_device_datasources` | 列出设备已应用的 DataSource | `device_id`, `size=50` (max 1000), `offset=0`, `filter?`, `fields?` |
-| `logicmonitor_get_device_datasource_instances` | 列出某 DataSource 在设备上的实例 | `device_id`, `source_id`, `size=50` (max 1000), `offset=0`, `filter?` |
 | `logicmonitor_get_device_datasource_data` | 获取 DataSource 采集的数据点 | `device_id`, `source_id`, `start?`, `end?` |
-| `logicmonitor_get_device_datasource_instance_alertsettings` | 查 DataSource 实例的告警阈值/设置覆盖 | `device_id`, `source_id`, `instance_id` |
 
 ### Alerts (3)
 
@@ -180,5 +178,5 @@ A parameterized call:
 
 ## Known Gaps / Not Yet Verified
 
-- Not yet tested against a live LogicMonitor portal — only protocol-level verification (health check, 401 on missing/partial headers, `tools/list` returning all 15 tools, unit-tested error-code mapping) has been done so far.
-- Tool coverage intentionally matches MSPbots' existing 15 registered LogicMonitor API entries rather than the full LogicMonitor REST API surface (which additionally covers write operations, dashboards, websites, collectors, and LogicModules) — expand on request if broader coverage is needed.
+- Not yet tested against a live LogicMonitor portal — only protocol-level verification (health check, 401 on missing/partial headers, `tools/list` returning all 13 tools, unit-tested error-code mapping) has been done so far.
+- Tool coverage originally matched MSPbots' existing 15 registered LogicMonitor API entries; 2 were removed post intent-matching testing (see Tool List above). Coverage does not extend to the full LogicMonitor REST API surface (which additionally covers write operations, dashboards, websites, collectors, and LogicModules) — expand on request if broader coverage is needed.

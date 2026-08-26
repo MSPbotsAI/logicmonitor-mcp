@@ -45,33 +45,6 @@ def register(mcp: FastMCP, client_factory: Callable[[], LogicMonitorClient | Non
             return e.to_envelope()
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
-    async def logicmonitor_get_device_datasource_instances(
-        device_id: Annotated[str, Field(description="Device ID.")],
-        source_id: Annotated[
-            str, Field(description="Device DataSource ID (the id from get_device_datasources).")
-        ],
-        size: Annotated[
-            int, Field(description="Page size (default 50, max 1000).")
-        ] = DEFAULT_PAGE_SIZE,
-        offset: Annotated[int, Field(description="Pagination offset (default 0).")] = 0,
-        filter: Annotated[
-            str | None, Field(description="LogicMonitor filter expression.")
-        ] = None,
-    ) -> str:
-        """List the instances of a device DataSource on a specific device."""
-        client = client_factory()
-        if client is None:
-            return NO_TOKEN
-        try:
-            result = await client.get(
-                f"/device/devices/{device_id}/devicedatasources/{source_id}/instances",
-                params={"size": clamp_size(size), "offset": offset, "filter": filter},
-            )
-            return dump_json_capped(result)
-        except LogicMonitorError as e:
-            return e.to_envelope()
-
-    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
     async def logicmonitor_get_device_datasource_data(
         device_id: Annotated[str, Field(description="Device ID.")],
         source_id: Annotated[str, Field(description="Device DataSource ID.")],
@@ -88,25 +61,6 @@ def register(mcp: FastMCP, client_factory: Callable[[], LogicMonitorClient | Non
             result = await client.get(
                 f"/device/devices/{device_id}/devicedatasources/{source_id}/data",
                 params={"start": start, "end": end},
-            )
-            return dump_json_capped(result)
-        except LogicMonitorError as e:
-            return e.to_envelope()
-
-    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
-    async def logicmonitor_get_device_datasource_instance_alertsettings(
-        device_id: Annotated[str, Field(description="Device ID.")],
-        source_id: Annotated[str, Field(description="Device DataSource ID.")],
-        instance_id: Annotated[str, Field(description="Device DataSource instance ID.")],
-    ) -> str:
-        """Get alert threshold/settings overrides for a DataSource instance."""
-        client = client_factory()
-        if client is None:
-            return NO_TOKEN
-        try:
-            result = await client.get(
-                f"/device/devices/{device_id}/devicedatasources/{source_id}"
-                f"/instances/{instance_id}/alertsettings"
             )
             return dump_json_capped(result)
         except LogicMonitorError as e:
